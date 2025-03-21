@@ -14,6 +14,7 @@
 */
 #include "MockNcclGroup.h"
 #include "MockNcclChannel.h"
+#include "HeterDistFlowModel.hh"
 #include<vector>
 #include<map>
 #include<set>
@@ -21,6 +22,11 @@
 #include <cmath>
 #include <algorithm>
 #include "astra-sim/system/MockNcclLog.h"
+#include<iostream>
+#include<cstdlib> // 添加这个头文件，用于std::getenv
+#include<string>
+#include<memory>
+#include<utility>
 using namespace std;
 namespace MockNccl {
   MockNcclGroup::MockNcclGroup(int _ngpus,int _gpus_per_nodes,int _TP_size,int _DP_size,int _PP_size,int _EP_size,int _DP_EP_size,std::vector<int>_NVSwitch,GPUType _gpu_type):g_flow_id(0),gpu_type(_gpu_type){
@@ -318,25 +324,95 @@ namespace MockNccl {
       return presult;
     } else {
       flow_models[flow_model_name] = genFlowModels(type,rank,op,data_size);
+      print_flowmodel(flow_models[flow_model_name]);
       FlowName2nums[flow_model_name]= 1;
-      return flow_models[flow_model_name][rank];
+      
+      // 检查当前rank的流模型是否存在
+      if(flow_models[flow_model_name].count(rank) != 0) {
+        return flow_models[flow_model_name][rank];
+      } else {
+        // 如果当前rank的流模型不存在，返回nullptr
+        return nullptr;
+      }
     }
   }
 
+  
+
   std::map<int,std::shared_ptr<FlowModels>> MockNcclGroup::genFlowModels(GroupType type , int rank, AstraSim::ComType op,uint64_t data_size){
-    switch (op) {
-      case AstraSim::ComType::All_Reduce:
-        return genAllReduceFlowModels(type,rank,data_size);
-      case AstraSim::ComType::All_Gather:
-        return genAllGatherFlowModels(type,rank,data_size);
-      case AstraSim::ComType::Reduce_Scatter:
-        return genReduceScatterFlowModels(type,rank,data_size);
-      case AstraSim::ComType::All_to_All:
-        return genAlltoAllFlowModels(type,rank,data_size);
-      default:
-        break;
+    // switch (op) {
+    //   case AstraSim::ComType::All_Reduce:
+    //     return genAllReduceFlowModels(type,rank,data_size);
+    //   case AstraSim::ComType::All_Gather:
+    //     return genAllGatherFlowModels(type,rank,data_size);
+    //   case AstraSim::ComType::Reduce_Scatter:
+    //     return genReduceScatterFlowModels(type,rank,data_size);
+    //   case AstraSim::ComType::All_to_All:
+    //     return genAlltoAllFlowModels(type,rank,data_size);
+    //   default:
+    //     break;
+    // }
+    return genFlowModelsHeterDist(type,rank,op,data_size);
+  }
+
+  void MockNcclGroup::print_flowmodel(const std::map<int,std::shared_ptr<FlowModels>>& flow_models) {
+    std::cout << "=== Flow Models Information ===" << std::endl;
+    for (const auto& [rank, flow_model_ptr] : flow_models) {
+      if (!flow_model_ptr) {
+        std::cout << "Rank " << rank << ": nullptr" << std::endl;
+        continue;
+      }
+      
+      std::cout << "Rank " << rank << " has " << flow_model_ptr->size() << " flows:" << std::endl;
+      
+      for (const auto& [flow_key, flow] : *flow_model_ptr) {
+        std::cout << "  Flow [" << flow_key.first << "," << flow_key.second << "]:" << std::endl;
+        std::cout << "    ID: " << flow.flow_id << std::endl;
+        std::cout << "    Source: " << flow.src << std::endl;
+        std::cout << "    Destination: " << flow.dest << std::endl;
+        std::cout << "    Size: " << flow.flow_size << " bytes" << std::endl;
+        
+        std::cout << "    Previous flows: ";
+        if (flow.prev.empty()) {
+          std::cout << "None";
+        } else {
+          for (size_t i = 0; i < flow.prev.size(); ++i) {
+            std::cout << flow.prev[i];
+            if (i < flow.prev.size() - 1) std::cout << ", ";
+          }
+        }
+        std::cout << std::endl;
+        
+        std::cout << "    Parent flow IDs: ";
+        if (flow.parent_flow_id.empty()) {
+          std::cout << "None";
+        } else {
+          for (size_t i = 0; i < flow.parent_flow_id.size(); ++i) {
+            std::cout << flow.parent_flow_id[i];
+            if (i < flow.parent_flow_id.size() - 1) std::cout << ", ";
+          }
+        }
+        std::cout << std::endl;
+        
+        std::cout << "    Child flow IDs: ";
+        if (flow.child_flow_id.empty()) {
+          std::cout << "None";
+        } else {
+          for (size_t i = 0; i < flow.child_flow_id.size(); ++i) {
+            std::cout << flow.child_flow_id[i];
+            if (i < flow.child_flow_id.size() - 1) std::cout << ", ";
+          }
+        }
+        std::cout << std::endl;
+        
+        std::cout << "    Channel ID: " << flow.channel_id << std::endl;
+        std::cout << "    Chunk ID: " << flow.chunk_id << std::endl;
+        std::cout << "    Chunk Count: " << flow.chunk_count << std::endl;
+        std::cout << "    Connection Type: " << flow.conn_type << std::endl;
+      }
+      std::cout << std::endl;
     }
-    return {};
+    std::cout << "===========================" << std::endl;
   }
 
   std::map<int,std::shared_ptr<FlowModels>> MockNcclGroup::genAlltoAllFlowModels(GroupType type, int rank, uint64_t data_size){
@@ -2099,5 +2175,175 @@ namespace MockNccl {
     nccl_infos[ncclInfoName] = info;
     return info;
     }
+  }
+
+  std::map<int,std::shared_ptr<FlowModels>> MockNcclGroup::genFlowModelsHeterDist(GroupType type , int rank, AstraSim::ComType op,uint64_t data_size){
+    MockNcclLog* NcclLog = MockNcclLog::getInstance();
+    bool enable_detailed_logging = false;
+    
+    // 检查环境变量
+    const char* debug_env = std::getenv("HETERDIST_DEBUG_LOG");
+    if (debug_env != nullptr) {
+      std::string debug_value(debug_env);
+      if (debug_value == "1" || debug_value == "true" || debug_value == "yes" || debug_value == "on") {
+        enable_detailed_logging = true;
+      }
+    }
+    
+    // 打印函数输入参数
+    if (enable_detailed_logging) {
+      std::cout << "\n===== 生成HeterDist流模型 =====" << std::endl;
+      std::cout << "输入参数:" << std::endl;
+      std::cout << "  组类型: " << static_cast<int>(type) << std::endl;
+      std::cout << "  Rank: " << rank << std::endl;
+      std::cout << "  操作类型: " << static_cast<int>(op) << std::endl;
+      std::cout << "  数据大小: " << data_size << " 字节" << std::endl;
+    }
+    
+    // 检查组信息是否存在
+    if (GroupIndex.count(std::make_pair(rank, type)) == 0) {
+      NcclLog->writeLog(NcclLogLevel::ERROR, "There is no corresponding group info for HeterDist flow model generation.");
+      if (enable_detailed_logging) {
+        std::cout << "错误: 找不到对应的组信息!" << std::endl;
+      }
+      return {};
+    }
+    
+    int gp_idx = GroupIndex[std::make_pair(rank, type)];
+    GroupInfo gp_info = AllGroups[gp_idx];
+    
+    if (enable_detailed_logging) {
+      std::cout << "找到组信息:" << std::endl;
+      std::cout << "  组索引: " << gp_idx << std::endl;
+      std::cout << "  节点数: " << gp_info.nNodes << std::endl;
+      std::cout << "  Rank数: " << gp_info.nRanks << std::endl;
+    }
+    
+    // 准备调用HeterDistFlowModel所需的ranks参数
+    std::vector<int> ranks;
+    for (auto& member : gp_info.Ranks) {
+      ranks.push_back(member);
+    }
+    
+    if (enable_detailed_logging) {
+      std::cout << "组成员 Ranks: [";
+      for (size_t i = 0; i < ranks.size(); ++i) {
+        std::cout << ranks[i];
+        if (i < ranks.size() - 1) {
+          std::cout << ", ";
+        }
+      }
+      std::cout << "]" << std::endl;
+    }
+    
+    // 根据操作类型确定算法名称
+    std::string algo_name;
+    switch (op) {
+      case AstraSim::ComType::All_Reduce:
+        algo_name = "ALLREDUCE";
+        break;
+      case AstraSim::ComType::All_Gather:
+        algo_name = "ALLGATHER";
+        break;
+      case AstraSim::ComType::Reduce_Scatter:
+        algo_name = "REDUCESCATTER";
+        break;
+      case AstraSim::ComType::All_to_All:
+        algo_name = "ALLTOALL";
+        break;
+      default:
+        algo_name = "HETERDIST";
+        break;
+    }
+
+    RingChannels ringchannels;
+    ringchannels = Allringchannels[gp_idx];
+    int m_channels = ringchannels.size();
+    
+    if (enable_detailed_logging) {
+      std::cout << "使用算法: " << algo_name << std::endl;
+      std::cout << "调用get_flow_model_heterdist获取流量模型..." << std::endl;
+    }
+    
+    // 调用HeterDistFlowModel获取流量模型，现在包含前置节点、前置依赖和后置依赖
+    std::map<int, std::vector<std::tuple<int, int, int, int, std::vector<int>, std::vector<int>, std::vector<int>>>> heter_flows = 
+        get_flow_model_heterdist(ranks, algo_name, data_size);
+    
+    if (enable_detailed_logging) {
+      std::cout << "获取到流量模型，开始转换为FlowModels格式..." << std::endl;
+    }
+    
+    // 创建结果映射
+    std::map<int, std::shared_ptr<FlowModels>> rank2pflowmodels;
+    
+    // 首先计算chunk_id的种类数
+    std::set<int> unique_chunk_ids;
+    for (const auto& [flow_rank, flows] : heter_flows) {
+      for (const auto& flow_tuple : flows) {
+        int chunk_id = std::get<3>(flow_tuple);
+        unique_chunk_ids.insert(chunk_id);
+      }
+    }
+    int chunk_count = unique_chunk_ids.size();
+    
+    if (enable_detailed_logging) {
+      std::cout << "检测到 " << chunk_count << " 种不同的chunk_id" << std::endl;
+    }
+    
+    // 遍历每个rank的流
+    for (const auto& [flow_rank, flows] : heter_flows) {
+      // 移除对输入rank的限制，处理所有rank的流
+      std::shared_ptr<FlowModels> pFlowModels = std::make_shared<FlowModels>();
+      
+      // 遍历该rank的所有流
+      for (const auto& flow_tuple : flows) {
+        // 解析流信息
+        int task_id = std::get<0>(flow_tuple);
+        int src = std::get<1>(flow_tuple);
+        int dst = std::get<2>(flow_tuple);
+        int chunk_id = std::get<3>(flow_tuple);
+        const std::vector<int>& prev_nodes = std::get<4>(flow_tuple);
+        const std::vector<int>& prev_deps = std::get<5>(flow_tuple);
+        const std::vector<int>& post_deps = std::get<6>(flow_tuple);
+        
+        // 创建SingleFlow对象
+        SingleFlow flow;
+        flow.flow_id = task_id;
+        flow.src = src;
+        flow.dest = dst;
+        flow.flow_size = data_size/chunk_count;
+        flow.prev = prev_nodes;
+        flow.parent_flow_id = prev_deps;
+        flow.child_flow_id = post_deps;
+        flow.channel_id = chunk_id % m_channels;  // 默认通道ID
+        flow.chunk_id = chunk_id;
+        flow.chunk_count = chunk_count;  // 设置为chunk_id的种类数
+        flow.conn_type = "HETERDIST";
+        
+        // 将流添加到FlowModels中
+        (*pFlowModels)[std::make_pair(chunk_id % m_channels, flow.flow_id)] = flow;
+        
+        if (enable_detailed_logging) {
+          std::cout << "添加流: ID=" << flow.flow_id 
+                    << ", Src=" << flow.src 
+                    << ", Dst=" << flow.dest 
+                    << ", ChunkID=" << flow.chunk_id << std::endl;
+        }
+      }
+      
+      // 将FlowModels添加到结果映射
+      rank2pflowmodels[flow_rank] = pFlowModels;
+      
+      if (enable_detailed_logging) {
+        std::cout << "为Rank " << flow_rank << " 创建了 " << pFlowModels->size() << " 个流" << std::endl;
+      }
+    }
+    
+    if (enable_detailed_logging) {
+      std::cout << "流模型生成完成" << std::endl;
+      std::cout << "============================" << std::endl;
+    }
+    
+    return rank2pflowmodels;
   }
 }

@@ -1,5 +1,6 @@
 set(use_rdma ${USE_RDMA})
 set(use_analytical ${USE_ANALYTICAL})
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 file(GLOB astra_SRC 
 	"${PROJECT_SOURCE_DIR}/../../astra-sim/system/collective/*.cc"
 	"${PROJECT_SOURCE_DIR}/../../astra-sim/system/fast-backend/*.cc"

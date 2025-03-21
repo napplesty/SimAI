@@ -39,10 +39,13 @@ void StreamBaseline::init() {
 }
 void StreamBaseline::call(EventType event, CallData* data) {
   if (event == EventType::WaitForVnetTurn) {
+    // std::cout<<"wait for vnet turn event called in stream"<<std::endl;
     owner->proceed_to_next_vnet_baseline(this);
     return;
   } else if(event == EventType::NCCL_General) {
-    
+    // std::cout << "nccl general event called in stream" << std::endl;
+
+    // 集合通信走这条
     BasicEventHandlerData* behd = (BasicEventHandlerData*) data;
     int channel_id = behd->channel_id;
     my_current_phase.algorithm->run(EventType::General, data);

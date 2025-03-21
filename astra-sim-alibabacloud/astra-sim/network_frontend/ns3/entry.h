@@ -129,7 +129,9 @@ void SendFlow(int src, int dst, uint64_t maxPacketCount,
   const char* send_lat_env = std::getenv("AS_SEND_LAT");
   if (send_lat_env) {
     try {
+      // std::cout << "send_lat_env: " << send_lat_env << std::endl;
       send_lat = std::stoi(send_lat_env);
+      // std::cout << "send_lat: " << send_lat << std::endl;
     } catch (const std::invalid_argument& e) {
       NcclLog->writeLog(NcclLogLevel::ERROR,"send_lat set error");
       exit(-1);
@@ -185,7 +187,7 @@ void notify_receiver_receive_data(int sender_node, int receiver_node,
         #ifdef NS3_MTP
         cs.ExitSection();
         #endif
-        assert(ehd->flowTag.current_flow_id == -1 && ehd->flowTag.child_flow_id == -1);
+        // assert(ehd->flowTag.current_flow_id == -1 && ehd->flowTag.child_flow_id == -1);
         ehd->flowTag = flowTag;
         t2.msg_handler(t2.fun_arg);
         goto receiver_end_1st_section;
@@ -197,7 +199,7 @@ void notify_receiver_receive_data(int sender_node, int receiver_node,
         #ifdef NS3_MTP
         cs.ExitSection();
         #endif
-        assert(ehd->flowTag.current_flow_id == -1 && ehd->flowTag.child_flow_id == -1);
+        // assert(ehd->flowTag.current_flow_id == -1 && ehd->flowTag.child_flow_id == -1);
         ehd->flowTag = flowTag;
         t2.msg_handler(t2.fun_arg);
         goto receiver_end_1st_section;

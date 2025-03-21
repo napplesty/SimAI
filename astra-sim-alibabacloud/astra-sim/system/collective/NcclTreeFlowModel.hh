@@ -56,7 +56,9 @@ class NcclTreeFlowModel : public Algorithm {
   bool send_back;
   bool NPU_to_MA;
 
+  std::map<int, int> flow_id_to_channel_id;
   std::map<int, int> indegree_mapping; 
+  std::map<int, int> outdegree_mapping;
   std::map<int, int> inprocessing_indegree; 
   std::map<int, int>* zero_latency_packets;
   std::map<int, int>* non_zero_latency_packets;

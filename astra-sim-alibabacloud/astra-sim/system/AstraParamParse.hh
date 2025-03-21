@@ -130,7 +130,9 @@ public:
                     }
 
                     if (valueStr != "null") {
+                        std::cout << "valueStr: " << valueStr << std::endl;
                         float value = std::stof(valueStr);
+                        std::cout << "value: " << value << std::endl;
                         
                         if (currentSection == "TP") {
                             if (key == "allreduce") params.tp_ar = value;

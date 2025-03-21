@@ -1,0 +1,1 @@
+AS_SEND_LAT=2 sudo ./bin/SimAI_simulator -t 16 -w ./example/microAllReduce.txt -n ./DCN+SingleToR_16g_8gps_400Gbps_H100 -c ./astra-sim-alibabacloud/inputs/config/SimAI.conf > simlog.txt

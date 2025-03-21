@@ -1,0 +1,43 @@
+# 设置断点
+break MockNcclGroup::genFlowModelsHeterDist
+break get_flow_model_heterdist
+
+# 运行程序
+run -t 1 -w ./example/microAllReduce.txt -n ./Spectrum-X_8g_8gps_400Gbps_H100 -c ./astra-sim-alibabacloud/inputs/config/SimAI.conf
+
+# 当程序停在断点时，可以使用以下命令
+# 打印变量
+# print rank
+# print data_size
+# print algo_name
+# print heter_flows.size()
+# print rank2pflowmodels.size()
+
+# 检查所有rank的流模型
+# commands 1
+#   printf "检查所有rank的流模型\n"
+#   print heter_flows.size()
+#   print rank2pflowmodels.size()
+#   for (auto& [r, flows] : rank2pflowmodels) {
+#     printf("Rank %d has %zu flows\n", r, flows->size());
+#   }
+#   continue
+# end
+
+# 继续执行
+# continue
+
+# 单步执行
+# next
+
+# 进入函数
+# step
+
+# 查看调用栈
+# backtrace
+
+# 查看当前位置的代码
+# list
+
+# 添加更多自定义命令...
+

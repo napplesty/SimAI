@@ -1,0 +1,1 @@
+sudo ./scripts/build.sh -c ns3

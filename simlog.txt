@@ -1,0 +1,164 @@
+user_param.network_topo: ./DCN+SingleToR_16g_8gps_400Gbps_H100
+user_param.network_conf: ./astra-sim-alibabacloud/inputs/config/SimAI.conf
+user_param.workload: ./example/microAllReduce.txt
+Executing generate_util command...
+Command executed successfully
+Loading task with simai-loader...
+Topology file: ./DCN+SingleToR_16g_8gps_400Gbps_H100
+Algorithm file: ./example/microAllReduce.txt
+TP group: 0
+ranks: 0 1 2 3 4 5 6 7 
+TP group: 1
+ranks: 8 9 10 11 12 13 14 15 
+DP group: 2
+ranks: 0 8 
+DP group: 3
+ranks: 1 9 
+DP group: 4
+ranks: 2 10 
+DP group: 5
+ranks: 3 11 
+DP group: 6
+ranks: 4 12 
+DP group: 7
+ranks: 5 13 
+DP group: 8
+ranks: 6 14 
+DP group: 9
+ranks: 7 15 
+DP_EP group: 10
+ranks: 0 8 
+DP_EP group: 11
+ranks: 1 9 
+DP_EP group: 12
+ranks: 2 10 
+DP_EP group: 13
+ranks: 3 11 
+DP_EP group: 14
+ranks: 4 12 
+DP_EP group: 15
+ranks: 5 13 
+DP_EP group: 16
+ranks: 6 14 
+DP_EP group: 17
+ranks: 7 15 
+DP_EP group: 18
+ranks: 0 8 
+DP_EP group: 19
+ranks: 1 9 
+DP_EP group: 20
+ranks: 2 10 
+DP_EP group: 21
+ranks: 3 11 
+DP_EP group: 22
+ranks: 4 12 
+DP_EP group: 23
+ranks: 5 13 
+DP_EP group: 24
+ranks: 6 14 
+DP_EP group: 25
+ranks: 7 15 
+Scheduling task with greedy-gen...
+Scheduling task with milp-dag-scheduler...
+===== 模型统计 =====
+变量数量: 169
+约束数量: 672
+===== 开始求解 =====
+presolving:
+(round 1, fast)       0 del vars, 56 del conss, 0 add conss, 114 chg bounds, 0 chg sides, 0 chg coeffs, 0 upgd conss, 0 impls, 0 clqs
+(round 2, exhaustive) 0 del vars, 112 del conss, 0 add conss, 114 chg bounds, 0 chg sides, 0 chg coeffs, 0 upgd conss, 0 impls, 0 clqs
+(round 3, exhaustive) 0 del vars, 112 del conss, 0 add conss, 114 chg bounds, 0 chg sides, 0 chg coeffs, 504 upgd conss, 0 impls, 0 clqs
+   (0.0s) probing: 51/56 (91.1%) - 0 fixings, 0 aggregations, 0 implications, 0 bound changes
+   (0.0s) probing aborted: 50/50 successive totally useless probings
+   Deactivated symmetry handling methods, since SCIP was built without symmetry detector (SYM=none).
+   Deactivated symmetry handling methods, since SCIP was built without symmetry detector (SYM=none).
+presolving (4 rounds: 4 fast, 3 medium, 3 exhaustive):
+ 0 deleted vars, 112 deleted constraints, 0 added constraints, 114 tightened bounds, 0 added holes, 0 changed sides, 0 changed coefficients
+ 0 implications, 0 cliques
+presolved problem has 169 variables (56 bin, 113 int, 0 impl, 0 cont) and 560 constraints
+    504 constraints of type <varbound>
+     56 constraints of type <linear>
+transformed objective value is always integral (scale: 1)
+Presolving Time: 0.00
+
+ time | node  | left  |LP iter|LP it/n|mem/heur|mdpt |vars |cons |rows |cuts |sepa|confs|strbr|  dualbound   | primalbound  |  gap   | compl. 
+t 0.0s|     1 |     0 |     0 |     - | trivial|   0 | 169 | 560 |   0 |   0 |  0 |   0 |   0 | 3.900000e+01 | 3.900000e+01 |   0.00%| unknown
+
+SCIP Status        : problem is solved [optimal solution found]
+Solving Time (sec) : 0.00
+Solving Nodes      : 1
+Primal Bound       : +3.90000000000000e+01 (1 solutions)
+Dual Bound         : +3.90000000000000e+01
+Gap                : 0.00 %
+===== 求解结果 =====
+结果状态: MPSOLVER_OPTIMAL
+找到最优解!
+AllReduce
+Optimal schedule found with makespan: 39
+===== 模型统计 =====
+变量数量: 169
+约束数量: 672
+===== 开始求解 =====
+presolving:
+(round 1, fast)       0 del vars, 56 del conss, 0 add conss, 114 chg bounds, 0 chg sides, 0 chg coeffs, 0 upgd conss, 0 impls, 0 clqs
+(round 2, exhaustive) 0 del vars, 112 del conss, 0 add conss, 114 chg bounds, 0 chg sides, 0 chg coeffs, 0 upgd conss, 0 impls, 0 clqs
+(round 3, exhaustive) 0 del vars, 112 del conss, 0 add conss, 114 chg bounds, 0 chg sides, 0 chg coeffs, 504 upgd conss, 0 impls, 0 clqs
+   (0.0s) probing: 51/56 (91.1%) - 0 fixings, 0 aggregations, 0 implications, 0 bound changes
+   (0.0s) probing aborted: 50/50 successive totally useless probings
+   Deactivated symmetry handling methods, since SCIP was built without symmetry detector (SYM=none).
+   Deactivated symmetry handling methods, since SCIP was built without symmetry detector (SYM=none).
+presolving (4 rounds: 4 fast, 3 medium, 3 exhaustive):
+ 0 deleted vars, 112 deleted constraints, 0 added constraints, 114 tightened bounds, 0 added holes, 0 changed sides, 0 changed coefficients
+ 0 implications, 0 cliques
+presolved problem has 169 variables (56 bin, 113 int, 0 impl, 0 cont) and 560 constraints
+    504 constraints of type <varbound>
+     56 constraints of type <linear>
+transformed objective value is always integral (scale: 1)
+Presolving Time: 0.00
+
+ time | node  | left  |LP iter|LP it/n|mem/heur|mdpt |vars |cons |rows |cuts |sepa|confs|strbr|  dualbound   | primalbound  |  gap   | compl. 
+t 0.0s|     1 |     0 |     0 |     - | trivial|   0 | 169 | 560 |   0 |   0 |  0 |   0 |   0 | 3.900000e+01 | 3.900000e+01 |   0.00%| unknown
+
+SCIP Status        : problem is solved [optimal solution found]
+Solving Time (sec) : 0.00
+Solving Nodes      : 1
+Primal Bound       : +3.90000000000000e+01 (1 solutions)
+Dual Bound         : +3.90000000000000e+01
+Gap                : 0.00 %
+===== 求解结果 =====
+结果状态: MPSOLVER_OPTIMAL
+找到最优解!
+AllReduce
+Optimal schedule found with makespan: 39
+Generating output with p2p-exporter...
+Output file: ./heter_dist_output
+Exporting P2P tasks to ./heter_dist_output
+P2P tasks export completed.
+Done!
+
+maxRtt=2360 maxBdp=118000
+Running Simulation.
+The final active chunks per dimension 1 after allocating to queues is: 1
+ring of node 0, id: 0 dimension: local total nodes in ring: 18 index in ring: 0 offset: 1total nodes in ring: 18
+ring of node 0, id: 0 dimension: local total nodes in ring: 18 index in ring: 0 offset: 1total nodes in ring: 18
+ring of node 0, id: 0 dimension: local total nodes in ring: 18 index in ring: 0 offset: 1total nodes in ring: 18
+ring of node 0, id: 0 dimension: local total nodes in ring: 18 index in ring: 0 offset: 1total nodes in ring: 18
+total nodes: 18
+Success in opening workload file
+model_parallel_NPU_group is 8
+checkpoints layers are: 
+layers initiating fwd_in_bckwd are: 
+ring of node 0, id: 0 dimension: local total nodes in ring: 8 index in ring: 0 offset: 1total nodes in ring: 8
+ring of node 0, id: 0 dimension: local total nodes in ring: 2 index in ring: 0 offset: 8total nodes in ring: 2
+ring of node 0, id: 0 dimension: local total nodes in ring: 8 index in ring: 0 offset: 1total nodes in ring: 8
+ring of node 0, id: 0 dimension: local total nodes in ring: 2 index in ring: 0 offset: 8total nodes in ring: 2
+ring of node 0, id: 0 dimension: local total nodes in ring: 8 index in ring: 0 offset: 1total nodes in ring: 8
+ring of node 0, id: 0 dimension: local total nodes in ring: 2 index in ring: 0 offset: 8total nodes in ring: 2
+ring of node 0, id: 0 dimension: local total nodes in ring: 8 index in ring: 0 offset: 1total nodes in ring: 8
+ring of node 0, id: 0 dimension: local total nodes in ring: 2 index in ring: 0 offset: 8total nodes in ring: 2
+pp_commize:0
+id: embedding_layer , depen: -1 , wg_comp_time: 1
+type: HYBRID_TRANSFORMER_FWD_IN_BCKWD ,num passes: 1 ,lines: 1 compute scale: 1 ,comm scale: 1
+stat path: ./ncclFlowModel_ ,total rows: 1 ,stat row: 0
+CSV path and filename: ./ncclFlowModel_detailed_18.csv
+CSV path and filename: ./ncclFlowModel_EndToEnd.csv

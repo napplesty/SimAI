@@ -1355,7 +1355,7 @@ bool Sys::mock_nccl_grobal_group_init(){
         ? total_nodes
         : workload->model_parallel_npu_group;
     int PP_size = 1;
-    int DP_size = all_gpus[0] / (TP_size * PP_size);
+    int DP_size = std::min(all_gpus[0] / (TP_size * PP_size),1);
     int EP_size = workload->expert_parallel_npu_group;
     int DP_EP_size = DP_size / EP_size;
     GlobalGroup = new MockNccl::MockNcclGroup(all_gpus[0],ngpus_per_node,TP_size,DP_size,PP_size,EP_size,DP_EP_size,NVSwitchs,gpu_type);

@@ -18,6 +18,8 @@
 #include "astra-sim/system/RecvPacketEventHadndlerData.hh"
 #include "astra-sim/system/Common.hh"
 #include "astra-sim/system/MockNcclLog.h"
+#include "astra-sim/system/collective/HeterDistEntry.hh"
+#include "astra-sim/system/HeterDistFlowModel.hh"
 #include "ns3/applications-module.h"
 #include "ns3/core-module.h"
 #include "ns3/csma-module.h"
@@ -119,14 +121,11 @@ public:
     t.type = 0;
     t.fun_arg = fun_arg;
     t.msg_handler = msg_handler;
+    // std::cout << "sim_send src " << t.src << " dst " << t.dest << " count " << t.count << " tag " << tag << std::endl;
     {
-      #ifdef NS3_MTP
       MtpInterface::explicitCriticalSection cs;
-      #endif
       sentHash[make_pair(tag, make_pair(t.src, t.dest))] = t;
-      #ifdef NS3_MTP
       cs.ExitSection();
-      #endif
     }
     SendFlow(rank, dst, count, msg_handler, fun_arg, tag, request);
     return 0;
@@ -268,7 +267,13 @@ int main(int argc, char *argv[]) {
   #ifdef NS3_MTP
   MtpInterface::Enable(user_param.thread);
   #endif
-  
+  std::cout << "user_param.network_topo: " << user_param.network_topo << std::endl;
+  std::cout << "user_param.network_conf: " << user_param.network_conf << std::endl;
+  std::cout << "user_param.workload: " << user_param.workload << std::endl;
+  AstraSim::HeterDistEntry::getInstance().workload = user_param.workload;
+  AstraSim::HeterDistEntry::getInstance().network_topo = user_param.network_topo;
+  AstraSim::HeterDistEntry::getInstance().network_conf = user_param.network_conf;
+  init_heterdist();
   main1(user_param.network_topo,user_param.network_conf);
   int nodes_num = node_num - switch_num;
   int gpu_num = node_num - nvswitch_num - switch_num;
@@ -327,6 +332,7 @@ int main(int argc, char *argv[]) {
   Simulator::Run();
   Simulator::Stop(Seconds(2000000000));
   Simulator::Destroy();
+  std::cout << "simulator run end " << std::endl;
   
   #ifdef NS3_MPI
   MpiInterface::Disable ();
